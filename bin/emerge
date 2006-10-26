@@ -21,7 +21,7 @@ except KeyboardInterrupt:
 	sys.exit(1)
 
 import os, stat
-sys.path.insert(0, os.environ.get("PORTAGE_PYM_PATH", "/usr/lib/portage/pym"))
+sys.path = ["/usr/lib/portage/pym"]+sys.path
 
 os.environ["PORTAGE_LEGACY_GLOBALS"] = "false"
 import portage
@@ -1358,30 +1358,15 @@ class depgraph:
 							print "\n!!! "+red("All ebuilds that could satisfy ")+green(xinfo)+red(" have been masked.")
 							print "!!! One of the following masked packages is required to complete your request:"
 							oldcomment = ""
-							shown_licenses = []
 							for p in alleb:
 								mreasons = portage.getmaskingstatus(p,
 									settings=pkgsettings, portdb=portdb)
 								print "- "+p+" (masked by: "+string.join(mreasons, ", ")+")"
-								if "package.mask" in mreasons:
-									comment = portage.getpmaskcomment(p,
-										settings=pkgsettings, portdb=portdb)
-									if comment and comment != oldcomment:
-										print comment
-										oldcomment = comment
-								licdict = portage.getlicensetexts(p, settings=pkgsettings, portdb=portdb, onlymasked=True)
-								for lic in licdict.keys():
-									if lic+" license" in mreasons and not lic in shown_licenses:
-										if len(licdict[lic][1]) > 2000:
-											print "Please read the text of license %s in %s" % (lic, licdict[lic][0])
-											print
-										else:
-											print "License text for license %s:" % lic
-											print
-											print licdict[lic][1]
-											print
-										shown_licenses.append(lic)
-										
+								comment = portage.getmaskingreason(p,
+									settings=pkgsettings, portdb=portdb)
+								if comment and comment != oldcomment:
+									print comment
+									oldcomment = comment
 							print
 							print "For more information, see MASKED PACKAGES section in the emerge man page or "
 							print "refer to the Gentoo Handbook."
@@ -2112,7 +2097,7 @@ class depgraph:
 				else:
 					myversion = "%s-%s" % (mysplit[1], mysplit[2])
 
-				if myversion != portage.VERSION and "--quiet" not in self.myopts:
+				if myversion != portage.VERSION :
 					if "--emptytree" in self.myopts:
 						p.append(colorize("WARN", "***")+" Please update portage to the above version before proceeding.")
 						p.append("    Failure to do so may result in failed or improper merges.")
