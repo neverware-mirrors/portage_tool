@@ -15,7 +15,7 @@
 from stat import *
 from random import *
 import atexit, commands, os, re, shutil, stat, string, sys
-sys.path.insert(0, os.environ.get("PORTAGE_PYM_PATH", "/usr/lib/portage/pym"))
+sys.path = ["/usr/lib/portage/pym"]+sys.path
 
 import portage, dispatch_conf
 from portage_exec import find_binary
@@ -81,7 +81,7 @@ class dispatch:
         for path in config_paths.split ():
             path = portage.normalize_path(path)
             try:
-                mymode = os.lstat(path).st_mode
+                mymode = os.stat(path).st_mode
             except OSError:
                 continue
             basename = "*"
