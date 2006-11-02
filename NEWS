@@ -3,8 +3,6 @@ News (mainly features/major bug fixes)
 portage-2.1.2
 ------------
 
-* ACCEPT_LICENSE and package.license allow packages with unaccepted licenses to
-  be masked.
 * Ebuilds support default USE flags via +flag in IUSE.
 * New-style virtuals are now usable for packages that depend on themselves for
   bootstrap.
@@ -19,7 +17,7 @@ portage-2.1.2
   order and detection of circular dependencies.
 * The world and system sets allow automatic update of all installed slots.
 * DEPEND atoms support SLOT dependencies of the form ${CATEGORY}/${PN}:${SLOT}.
-* Development: Extend PORTAGE_PYM_PATH support to allow overriding the hardcoded 
+* Development: Extend PYTHONPATH support to allow overriding the hardcoded 
   /usr/lib/portage/pym for development/testing purposes
 
 portage-2.1.1

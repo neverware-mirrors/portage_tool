@@ -18,9 +18,13 @@ if not hasattr(__builtins__, "set"):
 from stat import *
 from random import *
 import atexit, commands, os, re, shutil, stat, string, sys
-sys.path = ["/usr/lib/portage/pym"]+sys.path
+try:
+    import portage
+except ImportError:
+    sys.path.insert(0, "/usr/lib/portage/pym")
+    import portage
 
-import portage, dispatch_conf
+import dispatch_conf
 from portage_exec import find_binary
 
 FIND_EXTANT_CONFIGS  = "find '%s' %s -iname '._cfg????_%s'"
