@@ -1846,7 +1846,9 @@ class config:
 					cp = dep_getkey(cpv)
 					new_virtuals[cp] = [cp]
 		self._new_virtuals = new_virtuals
-		self.virtuals = self.getvirtuals()
+		# Make sure dirVirtuals and treeVirtuals are initialized.
+		self.getvirtuals()
+		self.virtuals = self.__getvirtuals_compile()
 
 	def __delitem__(self,mykey):
 		self.modifying()
