@@ -1661,6 +1661,8 @@ class config:
 						writemsg(red("USE flags should not start with a '+': %s\n" % x),
 							noiselevel=-1)
 						x=x[1:]
+						if not x:
+							continue
 
 					if (x[0]=="-"):
 						if (x[1:] in myflags):
@@ -1728,6 +1730,8 @@ class config:
 					writemsg(colorize("BAD", "USE flags should not start " + \
 						"with a '+': %s\n" % x), noiselevel=-1)
 					x = x[1:]
+					if not x:
+						continue
 
 				if x[0] == "-":
 					try:
