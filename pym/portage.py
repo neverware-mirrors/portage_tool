@@ -5064,7 +5064,7 @@ class portdbapi(dbapi):
 
 			mylock = None
 			try:
-				portage_locks.lockfile(mydbkey, wantnewlockfile=1)
+				mylock = portage_locks.lockfile(mydbkey, wantnewlockfile=1)
 				try:
 					os.unlink(mydbkey)
 				except (IOError, OSError), e:
