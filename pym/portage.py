@@ -4837,7 +4837,6 @@ class portdbapi(dbapi):
 
 	def __init__(self,porttree_root,mysettings=None):
 		portdbapi.portdbapi_instances.append(self)
-		self.lock_held = 0;
 
 		if mysettings:
 			self.mysettings = mysettings
@@ -5062,48 +5061,44 @@ class portdbapi(dbapi):
 			else:
 				mydbkey = self.depcachedir+"/aux_db_key_temp"
 
-			if self.lock_held:
-				raise "Lock is already held by me?"
-			self.lock_held = 1
-			mylock = portage_locks.lockfile(mydbkey, wantnewlockfile=1)
-
-			if os.path.exists(mydbkey):
+			mylock = None
+			try:
+				portage_locks.lockfile(mydbkey, wantnewlockfile=1)
 				try:
 					os.unlink(mydbkey)
 				except (IOError, OSError), e:
+					if e.errno != errno.ENOENT:
+						raise
+					del e
+
+				self.doebuild_settings.reset()
+				myret = doebuild(myebuild, "depend", "/",
+					 self.doebuild_settings, dbkey=mydbkey, tree="porttree",
+					 mydbapi=self)
+				if myret != os.EX_OK:
+					#depend returned non-zero exit code...
+					writemsg((red("\naux_get():") + \
+						" (0) Error in '%s'. (%s)\n" + \
+						"               Check for syntax error or " + \
+						"corruption in the ebuild. (--debug)\n\n") % \
+						(myebuild, myret), noiselevel=-1)
+					raise KeyError(mycpv)
+
+				try:
+					mycent = open(mydbkey, "r")
+					os.unlink(mydbkey)
+					mylines = mycent.readlines()
+					mycent.close()
+				except (IOError, OSError):
+					writemsg((red("\naux_get():") + \
+						" (1) Error in '%s' ebuild.\n" + \
+						"               Check for syntax error or " + \
+						"corruption in the ebuild. (--debug)\n\n") % myebuild,
+						noiselevel=-1)
+					raise KeyError(mycpv)
+			finally:
+				if mylock:
 					portage_locks.unlockfile(mylock)
-					self.lock_held = 0
-					writemsg("Uncaught handled exception: %(exception)s\n" % {"exception":str(e)})
-					raise
-
-			self.doebuild_settings.reset()
-			myret = doebuild(myebuild, "depend", "/", self.doebuild_settings,
-				dbkey=mydbkey, tree="porttree", mydbapi=self)
-			if myret:
-				portage_locks.unlockfile(mylock)
-				self.lock_held = 0
-				#depend returned non-zero exit code...
-				writemsg(str(red("\naux_get():")+" (0) Error in "+mycpv+" ebuild. ("+str(myret)+")\n"
-				"               Check for syntax error or corruption in the ebuild. (--debug)\n\n"),
-					noiselevel=-1)
-				raise KeyError
-
-			try:
-				mycent=open(mydbkey,"r")
-				os.unlink(mydbkey)
-				mylines=mycent.readlines()
-				mycent.close()
-
-			except (IOError, OSError):
-				portage_locks.unlockfile(mylock)
-				self.lock_held = 0
-				writemsg(str(red("\naux_get():")+" (1) Error in "+mycpv+" ebuild.\n"
-				  "               Check for syntax error or corruption in the ebuild. (--debug)\n\n"),
-				  noiselevel=-1)
-				raise KeyError
-
-			portage_locks.unlockfile(mylock)
-			self.lock_held = 0
 
 			mydata = {}
 			for x in range(0,len(mylines)):
@@ -5927,7 +5922,6 @@ class dblink:
 		self.dbdir    = self.dbpkgdir
 
 		self._lock_vdb = None
-		self.lock_num = 0    # Count of the held locks on the db.
 
 		self.settings = mysettings
 		if self.settings==1:
@@ -5943,14 +5937,14 @@ class dblink:
 		self._contents_inodes = None
 
 	def lockdb(self):
-		if self.lock_num == 0:
-			self._lock_vdb = portage_locks.lockdir(self.dbroot)
-		self.lock_num += 1
+		if self._lock_vdb:
+			raise AssertionError("Lock already held.")
+		self._lock_vdb = portage_locks.lockdir(self.dbroot)
 
 	def unlockdb(self):
-		self.lock_num -= 1
-		if self.lock_num == 0:
+		if self._lock_vdb:
 			portage_locks.unlockdir(self._lock_vdb)
+			self._lock_vdb = None
 
 	def getpath(self):
 		"return path to location of db information (for >>> informational display)"
@@ -6288,9 +6282,6 @@ class dblink:
 		if not os.path.exists(self.dbcatdir):
 			os.makedirs(self.dbcatdir)
 
-		# This blocks until we can get the dirs to ourselves.
-		self.lockdb()
-
 		otherversions=[]
 		for v in self.vartree.dbapi.cp_list(self.mysplit[0]):
 			otherversions.append(v.split("/")[1])
@@ -6374,7 +6365,7 @@ class dblink:
 				if not self.getcontents():
 					self.unmerge(ldpath_mtimes=prev_mtimes)
 					self.delete()
-				self.unlockdb()
+
 				print
 				print "Searching all installed packages for file collisions..."
 				print "Press Ctrl-C to Stop"
@@ -6522,7 +6513,6 @@ class dblink:
 		self.delete()
 		movefile(self.dbtmpdir, self.dbpkgdir, mysettings=self.settings)
 		contents = self.getcontents()
-		self.unlockdb()
 
 		#write out our collection of md5sums
 		if cfgfiledict.has_key("IGNORE"):
@@ -6856,8 +6846,12 @@ class dblink:
 
 	def merge(self, mergeroot, inforoot, myroot, myebuild=None, cleanup=0,
 		mydbapi=None, prev_mtimes=None):
-		return self.treewalk(mergeroot, myroot, inforoot, myebuild,
-			cleanup=cleanup, mydbapi=mydbapi, prev_mtimes=prev_mtimes)
+		try:
+			self.lockdb()
+			return self.treewalk(mergeroot, myroot, inforoot, myebuild,
+				cleanup=cleanup, mydbapi=mydbapi, prev_mtimes=prev_mtimes)
+		finally:
+			self.unlockdb()
 
 	def getstring(self,name):
 		"returns contents of a file with whitespace converted to spaces"
