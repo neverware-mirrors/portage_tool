@@ -1243,7 +1243,7 @@ class config:
 				for k, v in licdict.iteritems():
 					lstring = ""
 					for x in v:
-						lstring = " ".join(lstring, self.expandLicenseToken(x))
+						lstring += " "+self.expandLicenseToken(x)
 					self._plicensedict.setdefault(dep_getkey(k), {})[k] = lstring.split()
 
 				#package.unmask
@@ -1413,7 +1413,7 @@ class config:
 				writemsg("!!! %s\n" % str(e),
 					noiselevel=-1)
 
-	def expandLicenseToken(self, token):
+	def expandLicenseToken(self, token, ignore_tokens=[]):
 		""" Take a token from ACCEPT_LICENSE or package.license and expand it if 
 		it's a group token (indicated by @) or just return it if it's not a group."""
 		
@@ -1431,6 +1431,9 @@ class config:
 			for l in self._license_groups[token]:
 				if l[0] == "-":
 					writemsg("Skipping invalid element %s in licensegroup %s\n" % (l,token), 0)
+				elif l[0] == "@" and not l in ignore_tokens:
+					ignore_tokens.append(l)
+					rValue += self.expandLicenseToken(l, ignore_tokens=ignore_tokens).split()
 				else:
 					rValue.append(prefix+l)
 		else:
