@@ -2205,8 +2205,7 @@ class depgraph:
 			prefer_asap = True
 
 			for node in selected_nodes:
-				if node[-1] != "nomerge":
-					retlist.append(list(node))
+				retlist.append(list(node))
 				mygraph.remove(node)
 				if not reversed and not circular_blocks and myblockers.contains(node):
 					"""This node may have invalidated one or more blockers."""
@@ -2435,6 +2434,8 @@ class depgraph:
 		for x in mylist:
 			if "blocks" == x[0]:
 				display_list.append((x, 0, True))
+				continue
+			if "nomerge" == x[-1]:
 				continue
 			graph_key = tuple(x)
 			if "--tree" in self.myopts:
