@@ -1289,14 +1289,15 @@ class dblink(object):
 			raise AssertionError("Lock already held.")
 		# At least the parent needs to exist for the lock file.
 		ensure_dirs(self.dbroot)
-		if self._scheduler is None:
-			self._lock_vdb = lockdir(self.dbroot)
-		else:
-			async_lock = AsynchronousLock(path=self.dbroot,
-				scheduler=self._scheduler)
-			async_lock.start()
-			async_lock.wait()
-			self._lock_vdb = async_lock
+		if os.environ.get("PORTAGE_LOCKS") != "false":
+			if self._scheduler is None:
+				self._lock_vdb = lockdir(self.dbroot)
+			else:
+				async_lock = AsynchronousLock(path=self.dbroot,
+					scheduler=self._scheduler)
+				async_lock.start()
+				async_lock.wait()
+				self._lock_vdb = async_lock
 
 	def unlockdb(self):
 		if self._lock_vdb is not None:
