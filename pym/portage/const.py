@@ -93,7 +93,7 @@ SUPPORTED_FEATURES       = frozenset([
                            "installsources", "keeptemp", "keepwork", "fixlafiles", "lmirror",
                            "metadata-transfer", "mirror", "multilib-strict", "news",
                            "noauto", "noclean", "nodoc", "noinfo", "noman", "nostrip",
-                           "notitles", "parallel-fetch", "parse-eapi-ebuild-head",
+                           "notitles", "no-env-update", "parallel-fetch", "parse-eapi-ebuild-head",
                            "prelink-checksums", "preserve-libs",
                            "protect-owned", "python-trace", "sandbox",
                            "selinux", "sesandbox", "severe", "sfperms",
