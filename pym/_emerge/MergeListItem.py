@@ -103,7 +103,7 @@ class MergeListItem(CompositeTask):
 			self._start_task(binpkg, self._default_final_exit)
 			return
 
-	def merge(self):
+	def merge(self, exit_handler):
 
 		pkg = self.pkg
 		build_opts = self.build_opts
@@ -127,15 +127,14 @@ class MergeListItem(CompositeTask):
 					world_atom=world_atom)
 
 				uninstall.start()
-				retval = uninstall.wait()
-				if retval != os.EX_OK:
-					return retval
-			return os.EX_OK
-
-		if build_opts.fetchonly or \
+				self.returncode = uninstall.wait()
+			else:
+				self.returncode = os.EX_OK
+			exit_handler(self)
+		elif build_opts.fetchonly or \
 			build_opts.buildpkgonly:
-			return self.returncode
-
-		retval = self._install_task.install()
-		return retval
+			exit_handler(self)
+		else:
+			self._current_task = self._install_task
+			self._install_task.install(exit_handler)
 
