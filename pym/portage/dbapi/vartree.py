@@ -1669,7 +1669,7 @@ class dblink(object):
 
 							self._eerror(ebuild_phase, msg_lines)
 
-					self._elog_process()
+					self._elog_process(phasefilter=("prerm", "postrm"))
 
 					if retval == os.EX_OK and builddir_lock is not None:
 						# myebuildpath might be None, so ensure
@@ -2786,10 +2786,10 @@ class dblink(object):
 			self._scheduler.dblinkElog(self,
 				phase, _eerror, lines)
 
-	def _elog_process(self):
+	def _elog_process(self, phasefilter=None):
 		cpv = self.mycpv
 		if self._pipe is None:
-			elog_process(cpv, self.settings)
+			elog_process(cpv, self.settings, phasefilter=phasefilter)
 		else:
 			logdir = os.path.join(self.settings["T"], "logging")
 			ebuild_logentries = collect_ebuild_messages(logdir)
