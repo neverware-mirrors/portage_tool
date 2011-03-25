@@ -55,6 +55,7 @@ from portage import _unicode_encode
 
 from _emerge.AsynchronousLock import AsynchronousLock
 from _emerge.EbuildBuildDir import EbuildBuildDir
+from _emerge.EbuildPhase import EbuildPhase
 from _emerge.PollScheduler import PollScheduler
 from _emerge.MiscFunctionsProcess import MiscFunctionsProcess
 
@@ -1488,6 +1489,18 @@ class dblink(object):
 				" method is now unused.",
 				DeprecationWarning, stacklevel=2)
 
+		background = False
+		if self._scheduler is None:
+			# We create a scheduler instance and use it to
+			# log unmerge output separately from merge output.
+			self._scheduler = PollScheduler().sched_iface
+		if self.settings.get("PORTAGE_BACKGROUND_UNMERGE") == "1":
+			self.settings["PORTAGE_BACKGROUND"] = "1"
+			self.settings.backup_changes("PORTAGE_BACKGROUND")
+			background = True
+		else:
+			self.settings.pop("PORTAGE_BACKGROUND", None)
+
 		self.vartree.dbapi._bump_mtime(self.mycpv)
 		showMessage = self._display_merge
 		if self.vartree.dbapi._categories is not None:
@@ -1550,18 +1563,17 @@ class dblink(object):
 		try:
 			if myebuildpath:
 				builddir_lock = EbuildBuildDir(
-					scheduler=(scheduler or PollScheduler().sched_iface),
+					scheduler=scheduler,
 					settings=self.settings)
 				builddir_lock.lock()
 
 				prepare_build_dirs(settings=self.settings, cleanup=True)
 				log_path = self.settings.get("PORTAGE_LOG_FILE")
-
-				if scheduler is None:
-					retval = _spawn_phase('prerm', self.settings)
-				else:
-					retval = scheduler.dblinkEbuildPhase(
-						self, self.vartree.dbapi, myebuildpath, ebuild_phase)
+				phase = EbuildPhase(background=background,
+					phase=ebuild_phase, scheduler=scheduler,
+					settings=self.settings)
+				phase.start()
+				retval = phase.wait()
 
 				# XXX: Decide how to handle failures here.
 				if retval != os.EX_OK:
@@ -1583,11 +1595,11 @@ class dblink(object):
 
 			if myebuildpath:
 				ebuild_phase = "postrm"
-				if scheduler is None:
-					retval = _spawn_phase(ebuild_phase, self.settings)
-				else:
-					retval = scheduler.dblinkEbuildPhase(
-						self, self.vartree.dbapi, myebuildpath, ebuild_phase)
+				phase = EbuildPhase(background=background,
+					phase=ebuild_phase, scheduler=scheduler,
+					settings=self.settings)
+				phase.start()
+				retval = phase.wait()
 
 				# XXX: Decide how to handle failures here.
 				if retval != os.EX_OK:
@@ -1679,12 +1691,11 @@ class dblink(object):
 							self.pkg + ".ebuild")
 						doebuild_environment(myebuildpath, "cleanrm",
 							settings=self.settings, db=self.vartree.dbapi)
-						if scheduler is None:
-							_spawn_phase("cleanrm", self.settings)
-						else:
-							scheduler.dblinkEbuildPhase(
-								self, self.vartree.dbapi,
-								myebuildpath, "cleanrm")
+						phase = EbuildPhase(background=background,
+							phase="cleanrm", scheduler=scheduler,
+							settings=self.settings)
+						phase.start()
+						retval = phase.wait()
 				finally:
 					if builddir_lock is not None:
 						builddir_lock.unlock()
@@ -1728,11 +1739,18 @@ class dblink(object):
 	def _display_merge(self, msg, level=0, noiselevel=0):
 		if not self._verbose and noiselevel >= 0 and level < logging.WARN:
 			return
-		if self._scheduler is not None:
-			self._scheduler.dblinkDisplayMerge(self, msg,
-				level=level, noiselevel=noiselevel)
-			return
-		writemsg_level(msg, level=level, noiselevel=noiselevel)
+		if self._scheduler is None:
+			writemsg_level(msg, level=level, noiselevel=noiselevel)
+		else:
+			log_path = self.settings.get("PORTAGE_LOG_FILE")
+			background = self.settings.get("PORTAGE_BACKGROUND") == "1"
+
+			if log_path is None:
+				if not (background and level < logging.WARN):
+					writemsg_level(msg, level=level, noiselevel=noiselevel)
+			else:
+				self._scheduler.output(msg,
+					background=background, log_path=log_path)
 
 	def _unmerge_pkgfiles(self, pkgfiles, others_in_slot):
 		"""
@@ -1750,7 +1768,6 @@ class dblink(object):
 		os = _os_merge
 		perf_md5 = perform_md5
 		showMessage = self._display_merge
-		scheduler = self._scheduler
 
 		if not pkgfiles:
 			showMessage(_("No package files given... Grabbing a set.\n"))
@@ -1850,10 +1867,6 @@ class dblink(object):
 			eroot_split_len = len(self.settings["EROOT"].split(os.sep)) - 1
 
 			for i, objkey in enumerate(mykeys):
-
-				if scheduler is not None and \
-					0 == i % self._file_merge_yield_interval:
-					scheduler.scheduleYield()
 
 				obj = normalize_path(objkey)
 				if os is _os_merge:
