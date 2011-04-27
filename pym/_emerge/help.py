@@ -559,6 +559,12 @@ def help(myopts, havecolor=1):
 		print("       "+green("--nospinner"))
 		print("              Disables the spinner regardless of terminal type.")
 		print()
+		print("       " + green("--nousepkg-atoms") + " " + turquoise("ATOMS"))
+		desc = "A space separated list of package names or slot atoms." + \
+			" Emerge will ignore matching binary packages."
+		for line in wrap(desc, desc_width):
+			print(desc_indent + line)
+		print()
 		print("       "+green("--oneshot")+" ("+green("-1")+" short option)")
 		print("              Emerge as normal, but don't add packages to the world profile.")
 		print("              This package will only be updated if it is depended upon by")
@@ -635,6 +641,13 @@ def help(myopts, havecolor=1):
 		print("              changed since installation.  Unlike --newuse, this option does")
 		print("              not trigger reinstallation when flags that the user has not")
 		print("              enabled are added or removed.")
+		print()
+		print("       " + green("--reinstall-atoms") + " " + turquoise("ATOMS"))
+		desc = "A space separated list of package names or slot atoms. " + \
+			"Emerge will treat matching packages as if they are not " + \
+			"installed, and reinstall them if necessary."
+		for line in wrap(desc, desc_width):
+			print(desc_indent + line)
 		print()
 		print("       "+green("--root=DIR"))
 		desc = "Set the ROOT environment variable " + \
@@ -715,6 +728,13 @@ def help(myopts, havecolor=1):
 			(turquoise("y"), turquoise("n")))
 		desc = "Use unbuilt ebuild metadata for visibility " + \
 			"checks on built packages."
+		for line in wrap(desc, desc_width):
+			print(desc_indent + line)
+		print()
+		print("       " + green("--useoldpkg-atoms") + " " + turquoise("ATOMS"))
+		desc = "A space separated list of package names or slot atoms." + \
+			" Emerge will prefer matching binary packages over newer" + \
+			" unbuilt packages."
 		for line in wrap(desc, desc_width):
 			print(desc_indent + line)
 		print()
