@@ -475,9 +475,17 @@ may have changed.
 Disables the spinner for the session.  The spinner is active when the
 terminal device is determined to be a TTY.  This flag disables it regardless.
 .TP
-.BR "\-\-nousepkg\-atoms " ATOMS
+.BR "\-\-usepkg\-exclude " ATOMS
 A space separated list of package names or slot atoms. Emerge will ignore
 matching binary packages.
+.TP
+.BR "\-\-rebuild\-exclude " ATOMS
+A space separated list of package names or slot atoms. Emerge will not rebuild
+matching packages due to \fB\-\-rebuild\fR.
+.TP
+.BR "\-\-rebuild\-ignore " ATOMS
+A space separated list of package names or slot atoms. Emerge will not rebuild
+packages that depend on matching packages due to \fB\-\-rebuild\fR.
 .TP
 .BR "\-\-oneshot " (\fB\-1\fR)
 Emerge as normal, but do not add the packages to the world file
@@ -527,6 +535,20 @@ Disable the warning message that's shown prior to
 \fB\-\-unmerge\fR actions. This option is intended
 to be set in the \fBmake.conf\fR(5)
 \fBEMERGE_DEFAULT_OPTS\fR variable.
+.TP
+.BR "\-\-rebuild\-if\-new\-rev [ y | n ]"
+Rebuild packages when dependencies that are used at both build\-time and
+run\-time are built, if the dependency is not already installed with the
+same version and revision.
+.TP
+.BR "\-\-rebuild\-if\-new\-ver [ y | n ]"
+Rebuild packages when dependencies that are used at both build\-time and
+run\-time are built, if the dependency is not already installed with the
+same version. Revision numbers are ignored.
+.TP
+.BR "\-\-rebuild\-if\-unbuilt [ y | n ]"
+Rebuild packages when dependencies that are used at both build\-time and
+run\-time are built.
 .TP
 .BR "\-\-rebuilt\-binaries [ y | n ]"
 Replace installed packages with binary packages that have
