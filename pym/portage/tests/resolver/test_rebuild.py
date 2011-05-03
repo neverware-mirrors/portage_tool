@@ -23,6 +23,8 @@ class RebuildTestCase(TestCase):
 			"sys-apps/d-2": { "RDEPEND" : "sys-libs/x"},
 			"sys-apps/e-2": { "DEPEND"  : "sys-libs/x", "RDEPEND" : "sys-libs/x"},
 			"sys-apps/f-2": { "DEPEND"  : "sys-apps/a", "RDEPEND" : "sys-apps/a"},
+			"sys-apps/g-2": { "DEPEND"  : "sys-apps/b sys-libs/x",
+				"RDEPEND" : "sys-apps/b"},
 			}
 
 		installed = {
@@ -33,10 +35,12 @@ class RebuildTestCase(TestCase):
 			"sys-apps/d-1": { "RDEPEND" : "sys-libs/x"},
 			"sys-apps/e-1": { "DEPEND"  : "sys-libs/x", "RDEPEND" : "sys-libs/x"},
 			"sys-apps/f-1": { "DEPEND"  : "sys-apps/a", "RDEPEND" : "sys-apps/a"},
+			"sys-apps/g-1": { "DEPEND"  : "sys-apps/b sys-libs/x",
+				"RDEPEND" : "sys-apps/b"},
 			}
 
 		world = ["sys-apps/a", "sys-apps/b", "sys-apps/c", "sys-apps/d",
-			"sys-apps/e", "sys-apps/f"]
+			"sys-apps/e", "sys-apps/f", "sys-apps/g"]
 
 		test_cases = (
 				ResolverPlaygroundTestCase(
@@ -50,7 +54,8 @@ class RebuildTestCase(TestCase):
 				ResolverPlaygroundTestCase(
 					["sys-libs/x"],
 					options = {"--rebuild" : True},
-					mergelist = ['sys-libs/x-2', 'sys-apps/a-2', 'sys-apps/b-2', 'sys-apps/e-2'],
+					mergelist = ['sys-libs/x-2', 'sys-apps/a-2', 'sys-apps/b-2',
+						'sys-apps/e-2', 'sys-apps/g-2'],
 					ignore_mergelist_order = True,
 					success = True),
 			)
