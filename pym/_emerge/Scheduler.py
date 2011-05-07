@@ -96,7 +96,7 @@ class Scheduler(PollScheduler):
 		__slots__ = ("log_file", "schedule")
 
 	_task_queues_class = slot_dict_class(
-		("merge", "jobs", "fetch", "unpack"), prefix="")
+		("merge", "jobs", "ebuild_locks", "fetch", "unpack"), prefix="")
 
 	class _build_opts_class(SlotObject):
 		__slots__ = ("buildpkg", "buildpkgonly",
@@ -389,6 +389,8 @@ class Scheduler(PollScheduler):
 	def _set_max_jobs(self, max_jobs):
 		self._max_jobs = max_jobs
 		self._task_queues.jobs.max_jobs = max_jobs
+		if "parallel-install" in self.settings.features:
+			self._task_queues.merge.max_jobs = max_jobs
 
 	def _background_mode(self):
 		"""
@@ -565,7 +567,16 @@ class Scheduler(PollScheduler):
 		Schedule a setup phase on the merge queue, in order to
 		serialize unsandboxed access to the live filesystem.
 		"""
-		self._task_queues.merge.add(setup_phase)
+		if self._task_queues.merge.max_jobs > 1 and \
+			"ebuild-locks" in self.settings.features:
+			# Use a separate queue for ebuild-locks when the merge
+			# queue allows more than 1 job (due to parallel-install),
+			# since the portage.locks module does not behave as desired
+			# if we try to lock the same file multiple times
+			# concurrently from the same process.
+			self._task_queues.ebuild_locks.add(setup_phase)
+		else:
+			self._task_queues.merge.add(setup_phase)
 		self._schedule()
 
 	def _schedule_unpack(self, unpack_phase):
