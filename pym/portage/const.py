@@ -87,7 +87,8 @@ EBUILD_PHASES            = ("pretend", "setup", "unpack", "prepare", "configure"
                            "nofetch", "config", "info", "other")
 SUPPORTED_FEATURES       = frozenset([
                            "assume-digests", "binpkg-logs", "buildpkg", "buildsyspkg", "candy",
-                           "ccache", "chflags", "collision-protect", "compress-build-logs",
+                           "ccache", "chflags", "clean-logs",
+                           "collision-protect", "compress-build-logs",
                            "digest", "distcc", "distcc-pump", "distlocks", "ebuild-locks", "fakeroot",
                            "fail-clean", "fixpackages", "force-mirror", "getbinpkg",
                            "installsources", "keeptemp", "keepwork", "fixlafiles", "lmirror",
