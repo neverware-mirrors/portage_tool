@@ -305,8 +305,9 @@ class search(object):
 					myebuild = self._findname(mycpv)
 					if myebuild:
 						pkgdir = os.path.dirname(myebuild)
-						from portage import manifest
-						mf = manifest.Manifest(
+						mf = self.settings.repositories.get_repo_for_location(
+							os.path.dirname(os.path.dirname(pkgdir)))
+						mf = mf.load_manifest(
 							pkgdir, self.settings["DISTDIR"])
 						try:
 							uri_map = self._getFetchMap(mycpv)

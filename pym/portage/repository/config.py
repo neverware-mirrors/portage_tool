@@ -16,6 +16,7 @@ from portage.util import normalize_path, writemsg, writemsg_level, shlex_split
 from portage.localization import _
 from portage import _unicode_encode
 from portage import _encodings
+from portage import manifest
 
 _repo_name_sub_re = re.compile(r'[^\w-]')
 
@@ -36,7 +37,7 @@ class RepoConfig(object):
 	"""Stores config of one repository"""
 
 	__slots__ = ['aliases', 'eclass_overrides', 'eclass_locations', 'location', 'user_location', 'masters', 'main_repo',
-		'missing_repo_name', 'name', 'priority', 'sync', 'format']
+		'missing_repo_name', 'name', 'priority', 'sync', 'format', 'load_manifest']
 
 	def __init__(self, name, repo_opts):
 		"""Build a RepoConfig with options in repo_opts
@@ -105,6 +106,7 @@ class RepoConfig(object):
 			missing = False
 		self.name = name
 		self.missing_repo_name = missing
+		self.load_manifest = manifest.Manifest
 
 	def update(self, new_repo):
 		"""Update repository with options in another RepoConfig"""
@@ -485,6 +487,9 @@ class RepoConfigLoader(object):
 			# even if it is None.
 			return None
 		return self.treemap[repo_name]
+
+	def get_repo_for_location(self, location):
+		return self.prepos[self.get_name_for_location(location)]
 
 	def __getitem__(self, repo_name):
 		return self.prepos[repo_name]
