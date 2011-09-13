@@ -62,6 +62,7 @@ from _emerge.PollScheduler import PollScheduler
 from _emerge.MiscFunctionsProcess import MiscFunctionsProcess
 
 import codecs
+import fileinput
 import gc
 import re, shutil, stat, errno, subprocess
 import logging
@@ -1837,16 +1838,17 @@ class dblink(object):
 		else:
 			self.settings.pop("PORTAGE_LOG_FILE", None)
 
-		# Lock the config memory file to prevent symlink creation
-		# in merge_contents from overlapping with env-update.
-		self.vartree.dbapi._fs_lock()
-		try:
-			env_update(target_root=self.settings['ROOT'],
-				prev_mtimes=ldpath_mtimes,
-				contents=contents, env=self.settings.environ(),
-				writemsg_level=self._display_merge)
-		finally:
-			self.vartree.dbapi._fs_unlock()
+		if 'no-env-update' not in self.settings.features:
+			# Lock the config memory file to prevent symlink creation
+			# in merge_contents from overlapping with env-update.
+			self.vartree.dbapi._fs_lock()
+			try:
+				env_update(target_root=self.settings['ROOT'],
+					prev_mtimes=ldpath_mtimes,
+					contents=contents, env=self.settings.environ(),
+					writemsg_level=self._display_merge)
+			finally:
+				self.vartree.dbapi._fs_unlock()
 
 		return os.EX_OK
 
@@ -3621,22 +3623,37 @@ class dblink(object):
 			showMessage(_("!!! FAILED postinst: ")+str(a)+"\n",
 				level=logging.ERROR, noiselevel=-1)
 
-		downgrade = False
-		for v in otherversions:
-			if pkgcmp(catpkgsplit(self.pkg)[1:], catpkgsplit(v)[1:]) < 0:
-				downgrade = True
+		if 'no-env-update' not in self.settings.features:
+			downgrade = False
+			for v in otherversions:
+				if pkgcmp(catpkgsplit(self.pkg)[1:], catpkgsplit(v)[1:]) < 0:
+					downgrade = True
 
-		# Lock the config memory file to prevent symlink creation
-		# in merge_contents from overlapping with env-update.
-		self.vartree.dbapi._fs_lock()
-		try:
-			#update environment settings, library paths. DO NOT change symlinks.
-			env_update(makelinks=(not downgrade),
-				target_root=self.settings['ROOT'], prev_mtimes=prev_mtimes,
-				contents=contents, env=self.settings.environ(),
-				writemsg_level=self._display_merge)
-		finally:
-			self.vartree.dbapi._fs_unlock()
+		if 'no-env-update' not in self.settings.features:
+			# Lock the config memory file to prevent symlink creation
+			# in merge_contents from overlapping with env-update.
+			self.vartree.dbapi._fs_lock()
+			try:
+				#update environment settings, library paths. DO NOT change symlinks.
+				env_update(makelinks=(not downgrade),
+					target_root=self.settings['ROOT'], prev_mtimes=prev_mtimes,
+					contents=contents, env=self.settings.environ(),
+					writemsg_level=self._display_merge)
+			finally:
+				self.vartree.dbapi._fs_unlock()
+
+		# Fix *.la files to point to libs in target_root, if they
+		# don't do so already.
+		re_root = self.settings["ROOT"].strip("/")
+		if re_root:
+			fix_files = []
+			for path in contents:
+				if path.endswith(".la"):
+					if os.path.exists(path): fix_files.append(path)
+			if fix_files:
+				pat = re.compile(r"([' =](?:-[IL])?/)(usr|lib|opt)")
+				for line in fileinput.input(fix_files, inplace=1):
+					sys.stdout.write(pat.sub(r"\1%s/\2" % re_root, line))
 
 		# For gcc upgrades, preserved libs have to be removed after the
 		# the library path has been updated.
