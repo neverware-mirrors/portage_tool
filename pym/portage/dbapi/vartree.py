@@ -213,7 +213,7 @@ class vardbapi(dbapi):
 		"""
 		if self._lock_count:
 			self._lock_count += 1
-		else:
+		elif os.environ.get("PORTAGE_LOCKS") != "false":
 			if self._lock is not None:
 				raise AssertionError("already locked")
 			# At least the parent needs to exist for the lock file.
@@ -229,7 +229,7 @@ class vardbapi(dbapi):
 		"""
 		if self._lock_count > 1:
 			self._lock_count -= 1
-		else:
+		elif os.environ.get("PORTAGE_LOCKS") != "false":
 			if self._lock is None:
 				raise AssertionError("not locked")
 			self._lock_count = 0
