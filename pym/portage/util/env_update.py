@@ -42,6 +42,14 @@ def env_update(makelinks=1, target_root=None, prev_mtimes=None, contents=None,
 		defaults to portage.settings["ROOT"].
 	@type target_root: String (Path)
 	"""
+	settings = getattr(portage, 'settings', None)
+	if settings is None:
+		settings = config(config_root=target_root,
+			target_root=target_root)
+
+	if 'no-env-update' in settings.features:
+		return
+
 	if vardbapi is None:
 		if isinstance(env, config):
 			vardbapi = vartree(settings=env).dbapi
