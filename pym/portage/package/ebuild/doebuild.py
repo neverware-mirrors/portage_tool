@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 
 __all__ = ['doebuild', 'doebuild_environment', 'spawn', 'spawnebuild']
 
+import fileinput
 import grp
 import gzip
 import errno
@@ -1949,6 +1950,7 @@ def _post_src_install_uid_fix(mysettings, out):
 	destdir = mysettings["D"]
 	ed_len = len(mysettings["ED"])
 	unicode_errors = []
+	fix_files = []
 	desktop_file_validate = \
 		portage.process.find_binary("desktop-file-validate") is not None
 	xdg_dirs = mysettings.get('XDG_DATA_DIRS', '/usr/share').split(':')
@@ -2075,10 +2077,12 @@ def _post_src_install_uid_fix(mysettings, out):
 							new_contents, mode='wb')
 
 				mystat = os.lstat(fpath)
-				if stat.S_ISREG(mystat.st_mode) and \
-					mystat.st_ino not in counted_inodes:
-					counted_inodes.add(mystat.st_ino)
-					size += mystat.st_size
+				if stat.S_ISREG(mystat.st_mode):
+					if fname.endswith(".la"):
+						fix_files.append(fpath)
+					if mystat.st_ino not in counted_inodes:
+						counted_inodes.add(mystat.st_ino)
+						size += mystat.st_size
 				if mystat.st_uid != portage_uid and \
 					mystat.st_gid != portage_gid:
 					continue
@@ -2118,6 +2122,14 @@ def _post_src_install_uid_fix(mysettings, out):
 		errors='strict')
 	f.write('%d\n' % size)
 	f.close()
+
+	re_root = mysettings["ROOT"].strip("/")
+	if fix_files and re_root:
+		# Replace references to our sysroot with references to "/" in binpkg.
+		# Sysroot will be re-appended when the package is installed.
+		pat = re.compile(r"([' =](-[IL])?/)%s/" % re.escape(re_root))
+		for line in fileinput.input(fix_files, inplace=1):
+			sys.stdout.write(pat.sub(r"\1", line))
 
 	_reapply_bsdflags_to_image(mysettings)
 
