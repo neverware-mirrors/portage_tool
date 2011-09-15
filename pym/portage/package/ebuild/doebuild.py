@@ -3,6 +3,7 @@
 
 __all__ = ['doebuild', 'doebuild_environment', 'spawn', 'spawnebuild']
 
+import fileinput
 import gzip
 import errno
 import io
@@ -1499,6 +1500,7 @@ def _post_src_install_uid_fix(mysettings, out):
 
 	destdir = mysettings["D"]
 	unicode_errors = []
+	fix_files = []
 
 	while True:
 
@@ -1587,10 +1589,12 @@ def _post_src_install_uid_fix(mysettings, out):
 							new_contents, mode='wb')
 
 				mystat = os.lstat(fpath)
-				if stat.S_ISREG(mystat.st_mode) and \
-					mystat.st_ino not in counted_inodes:
-					counted_inodes.add(mystat.st_ino)
-					size += mystat.st_size
+				if stat.S_ISREG(mystat.st_mode):
+					if fname.endswith(".la"):
+						fix_files.append(fpath)
+					if mystat.st_ino not in counted_inodes:
+						counted_inodes.add(mystat.st_ino)
+						size += mystat.st_size
 				if mystat.st_uid != portage_uid and \
 					mystat.st_gid != portage_gid:
 					continue
@@ -1657,6 +1661,14 @@ def _post_src_install_uid_fix(mysettings, out):
 			k), encoding=_encodings['fs'], errors='strict'),
 			mode='w', encoding=_encodings['repo.content'],
 			errors='strict').write(_unicode_decode(v + '\n'))
+
+	re_root = mysettings["ROOT"].strip("/")
+	if fix_files and re_root:
+		# Replace references to our sysroot with references to "/" in binpkg.
+		# Sysroot will be re-appended when the package is installed.
+		pat = re.compile(r"([' =](-[IL])?/)%s/" % re.escape(re_root))
+		for line in fileinput.input(fix_files, inplace=1):
+			sys.stdout.write(pat.sub(r"\1", line))
 
 	_reapply_bsdflags_to_image(mysettings)
 
