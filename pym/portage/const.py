@@ -157,6 +157,7 @@ SUPPORTED_FEATURES       = frozenset([
 	"multilib-strict",
 	"network-sandbox",
 	"news",
+	"no-env-update",
 	"noauto",
 	"noclean",
 	"nodoc",
