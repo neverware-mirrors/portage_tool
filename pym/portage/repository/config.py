@@ -38,7 +38,7 @@ class RepoConfig(object):
 
 	__slots__ = ['aliases', 'eclass_overrides', 'eclass_locations', 'location', 'user_location', 'masters', 'main_repo',
 		'missing_repo_name', 'name', 'priority', 'sync', 'format', 'sign_manifest', 'thin_manifest',
-		'allow_missing_manifest', 'create_manifest', 'disable_manifest']
+		'allow_missing_manifest', 'create_manifest', 'disable_manifest', 'cache_format']
 
 	def __init__(self, name, repo_opts):
 		"""Build a RepoConfig with options in repo_opts
@@ -111,6 +111,16 @@ class RepoConfig(object):
 		self.allow_missing_manifest = False
 		self.create_manifest = True
 		self.disable_manifest = False
+		self.cache_format = None
+
+	def get_pregenerated_cache(self, auxdbkeys, readonly=True):
+		if self.cache_format is None:
+			return None
+		elif self.cache_format == 'pms':
+			from portage.cache.metadata import database
+			return database(self.location, 'metadata/cache',
+				auxdbkeys, readonly=readonly)
+		return None
 
 	def load_manifest(self, *args, **kwds):
 		kwds['thin'] = self.thin_manifest
@@ -336,6 +346,13 @@ class RepoConfigLoader(object):
 			repo.allow_missing_manifest = manifest_policy != 'strict'
 			repo.create_manifest = manifest_policy != 'false'
 			repo.disable_manifest = manifest_policy == 'false'
+
+			# for compatibility w/ PMS, fallback to pms; but also check if the
+			# cache exists or not.
+			repo.cache_format = layout_data.get('cache-format', 'pms').lower()
+			if repo.cache_format == 'pms' and not os.path.isdir(
+				os.path.join(repo.location, 'metadata', 'cache')):
+				repo.cache_format = None
 
 		#Take aliases into account.
 		new_prepos = {}
