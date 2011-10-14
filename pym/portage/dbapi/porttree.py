@@ -410,7 +410,7 @@ class portdbapi(dbapi):
 			except KeyError:
 				pass
 			except CacheError:
-				if auxdb is not pregen_auxdb:
+				if not auxdb.readonly:
 					try:
 						del auxdb[cpv]
 					except KeyError:
