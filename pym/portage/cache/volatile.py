@@ -19,7 +19,7 @@ class database(template.database):
 		self._delitem = self._data.__delitem__
 		self.__contains__ = self._data.__contains__
 
-	def __setitem__(self, name, values):
+	def _setitem(self, name, values):
 		self._data[name] = copy.deepcopy(values)
 
 	def __getitem__(self, cpv):
