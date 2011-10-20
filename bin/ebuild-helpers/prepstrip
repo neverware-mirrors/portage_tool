@@ -342,7 +342,12 @@ do
 	elif [[ ${f} == *"SB executable"* || ${f} == *"SB shared object"* ]] ; then
 		process_elf "${x}" "${inode_link}" ${PORTAGE_STRIP_FLAGS}
 	elif [[ ${f} == *"SB relocatable"* ]] ; then
-		process_elf "${x}" "${inode_link}" ${SAFE_STRIP_FLAGS}
+		__vecho "   ${x:${#D}}"
+		save_elf_sources "${x}"
+		if ${strip_this} ; then
+			[[ ${x} == *.ko ]] && save_elf_debug "${x}" "${inode_link}_debug"
+			${STRIP} ${SAFE_STRIP_FLAGS} "${x}"
+		fi
 	fi
 
 	if ${was_not_writable} ; then
