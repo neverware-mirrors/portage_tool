@@ -882,8 +882,16 @@ preinst_selinux_labels() {
 dyn_package() {
 	# Make sure $PWD is not ${D} so that we don't leave gmon.out files
 	# in there in case any tools were built with -pg in CFLAGS.
+
 	cd "${T}"
-	install_mask "${PORTAGE_BUILDDIR}/image" "${PKG_INSTALL_MASK}"
+
+	local PROOT="${T}/packaging"
+	# make a temporary copy of ${D} so that any modifications we do that
+	# are binpkg specific, do not influence the actual installed image.
+	cp -la "${PORTAGE_BUILDDIR}/image" "${PROOT}" || die "failed creating packaging tree"
+
+	install_mask "${PROOT}" "${PKG_INSTALL_MASK}"
+
 	local tar_options=""
 	[[ $PORTAGE_VERBOSE = 1 ]] && tar_options+=" -v"
 	# Sandbox is disabled in case the user wants to use a symlink
@@ -892,7 +900,7 @@ dyn_package() {
 	[ -z "${PORTAGE_BINPKG_TMPFILE}" ] && \
 		die "PORTAGE_BINPKG_TMPFILE is unset"
 	mkdir -p "${PORTAGE_BINPKG_TMPFILE%/*}" || die "mkdir failed"
-	tar $tar_options -cf - $PORTAGE_BINPKG_TAR_OPTS -C "${D}" . | \
+	tar $tar_options -cf - $PORTAGE_BINPKG_TAR_OPTS -C "${PROOT}" . | \
 		$PORTAGE_BZIP2_COMMAND -c > "$PORTAGE_BINPKG_TMPFILE"
 	assert "failed to pack binary package: '$PORTAGE_BINPKG_TMPFILE'"
 	PYTHONPATH=${PORTAGE_PYM_PATH}${PYTHONPATH:+:}${PYTHONPATH} \
@@ -913,6 +921,9 @@ dyn_package() {
 	[ -n "${md5_hash}" ] && \
 		echo ${md5_hash} > "${PORTAGE_BUILDDIR}"/build-info/BINPKGMD5
 	vecho ">>> Done."
+
+	# cleanup our temp tree
+	rm -rf "${PROOT}"
 	cd "${PORTAGE_BUILDDIR}"
 	>> "$PORTAGE_BUILDDIR/.packaged" || \
 		die "Failed to create $PORTAGE_BUILDDIR/.packaged"
