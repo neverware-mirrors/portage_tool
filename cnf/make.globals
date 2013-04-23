@@ -65,9 +65,6 @@ COLLISION_IGNORE="/lib/modules"
 # This setting is commented out for portage versions that don't support it.
 #FEATURES="${FEATURES} preserve-libs"
 
-# Default chunksize for binhost comms
-PORTAGE_BINHOST_CHUNKSIZE="3000"
-
 # By default wait 5 secs before cleaning a package
 CLEAN_DELAY="5"
 
