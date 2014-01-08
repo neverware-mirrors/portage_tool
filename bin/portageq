@@ -871,6 +871,17 @@ def list_preserved_libs(argv):
 	return rValue
 list_preserved_libs.uses_eroot = True
 
+def use_reduce(argv):
+	"""<depend_string>
+	Reduce a dependency string possibly containing use conditionals.
+	"""
+
+	if len(argv) != 1:
+		print("ERROR: wrong number of arguments")
+		return 2
+	from portage.dep import use_reduce as use_internal
+	print(' '.join(use_internal(argv[0], uselist=os.environ['USE'].split(' '))))
+
 #-----------------------------------------------------------------------------
 #
 # DO NOT CHANGE CODE BEYOND THIS POINT - IT'S NOT NEEDED!
