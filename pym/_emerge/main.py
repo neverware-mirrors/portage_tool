@@ -32,6 +32,7 @@ options=[
 "--fetchonly",    "--fetch-all-uri",
 "--ignore-default-opts",
 "--noconfmem",
+"--newrepo",
 "--newuse",
 "--nodeps",       "--noreplace",
 "--nospinner",    "--oneshot",
