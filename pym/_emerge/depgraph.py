@@ -4518,8 +4518,10 @@ class depgraph(object):
 								cur_iuse = myeb.iuse.all
 							reinstall_for_flags = self._reinstall_for_flags(pkg,
 								forced_flags, old_use, iuses, now_use, cur_iuse)
-							if reinstall_for_flags and not pkg.installed:
-								self._dynamic_config.ignored_binaries.setdefault(pkg, set()).update(reinstall_for_flags)
+							if reinstall_for_flags:
+								if not pkg.installed:
+									self._dynamic_config.ignored_binaries.setdefault(pkg, set()).update(reinstall_for_flags)
+								break
 					# Compare current config to installed package
 					# and do not reinstall if possible.
 					if not installed and not useoldpkg and cpv in vardb.match(atom):
