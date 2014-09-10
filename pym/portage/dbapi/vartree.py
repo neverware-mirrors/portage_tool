@@ -3724,7 +3724,7 @@ class dblink(object):
 					break
 
 				relative_path = parent[srcroot_len:]
-				dirlist.append(os.path.join("/", relative_path))
+				dirlist.append(os.path.join(destroot, relative_path))
 
 				for fname in files:
 					try:
