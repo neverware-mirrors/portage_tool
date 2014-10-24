@@ -886,15 +886,15 @@ class binarytree(object):
 			proc = None
 			tmp_filename = None
 			try:
-				ttl = float(pkgindex.header.get("TTL", 0))
-				if download_timestamp and ttl and download_timestamp + ttl > time.time():
-					raise UseCachedCopyOfRemoteIndex()
-
 				# urlparse.urljoin() only works correctly with recognized
 				# protocols and requires the base url to have a trailing
 				# slash, so join manually...
 				url = base_url.rstrip("/") + "/Packages"
 				f = None
+
+				ttl = float(pkgindex.header.get("TTL", 0))
+				if download_timestamp and ttl and download_timestamp + ttl > time.time():
+					raise UseCachedCopyOfRemoteIndex()
 
 				# Don't use urlopen for https, since it doesn't support
 				# certificate/hostname verification (bug #469888).
