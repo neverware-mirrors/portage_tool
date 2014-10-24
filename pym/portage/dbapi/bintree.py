@@ -43,6 +43,7 @@ import subprocess
 import sys
 import tempfile
 import textwrap
+import time
 import traceback
 import warnings
 from gzip import GzipFile
@@ -879,11 +880,16 @@ class binarytree(object):
 				if e.errno != errno.ENOENT:
 					raise
 			local_timestamp = pkgindex.header.get("TIMESTAMP", None)
+			download_timestamp = float(pkgindex.header.get("DOWNLOAD_TIMESTAMP", 0))
 			remote_timestamp = None
 			rmt_idx = self._new_pkgindex()
 			proc = None
 			tmp_filename = None
 			try:
+				ttl = float(pkgindex.header.get("TTL", 0))
+				if download_timestamp and ttl and download_timestamp + ttl > time.time():
+					raise UseCachedCopyOfRemoteIndex()
+
 				# urlparse.urljoin() only works correctly with recognized
 				# protocols and requires the base url to have a trailing
 				# slash, so join manually...
@@ -1022,6 +1028,7 @@ class binarytree(object):
 					pass
 			if pkgindex is rmt_idx:
 				pkgindex.modified = False # don't update the header
+				pkgindex.header["DOWNLOAD_TIMESTAMP"] = str(long(time.time()))
 				try:
 					ensure_dirs(os.path.dirname(pkgindex_file))
 					f = atomic_ofstream(pkgindex_file)
