@@ -177,6 +177,7 @@ SUPPORTED_FEATURES       = frozenset([
 	"python-trace",
 	"sandbox",
 	"selinux",
+	"separatedebug",
 	"sesandbox",
 	"sfperms",
 	"sign",

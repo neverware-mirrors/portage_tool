@@ -556,6 +556,11 @@ Output a verbose trace of python execution to stderr when a command's
 .B sandbox
 Enable sandbox\-ing when running \fBemerge\fR(1) and \fBebuild\fR(1).
 .TP
+.B separatedebug
+When splitdebug is enabled, produces a separate tarball containing the debug
+symbols in \fBPKGDIR\fR.
+The debug symbols tarball has the name ${CATEGORY}/${PF}.debug.tbz2.
+.TP
 .B sesandbox
 Enable SELinux sandbox\-ing.  Do not toggle this \fBFEATURE\fR yourself.
 .TP
