@@ -461,6 +461,17 @@ __dyn_package() {
 	[ -z "${PORTAGE_BINPKG_TMPFILE}" ] && \
 		die "PORTAGE_BINPKG_TMPFILE is unset"
 	mkdir -p "${PORTAGE_BINPKG_TMPFILE%/*}" || die "mkdir failed"
+
+	if has separatedebug ${FEATURES} && [[ -d "${PROOT%/}${EPREFIX}/usr/lib/debug" ]]; then
+		[[ -z "${PORTAGE_DEBUGSYMBOLS_TMPFILE}" ]] && \
+			die "PORTAGE_DEBUGSYMBOLS_TMPFILE is unset"
+		mkdir -p "${PORTAGE_DEBUGSYMBOLS_TMPFILE%/*}" || die "mkdir failed"
+		tar $tar_options -cf - $PORTAGE_BINPKG_TAR_OPTS \
+			-C "${PROOT}" ".${EPREFIX}/usr/lib/debug/" | \
+		$PORTAGE_BZIP2_COMMAND -c > "$PORTAGE_DEBUGSYMBOLS_TMPFILE"
+		tar_options+=" --anchored --exclude=.${EPREFIX}/usr/lib/debug"
+	fi
+
 	[ -z "${PORTAGE_COMPRESSION_COMMAND}" ] && \
         die "PORTAGE_COMPRESSION_COMMAND is unset"
 	tar $tar_options -cf - $PORTAGE_BINPKG_TAR_OPTS -C "${D}" . | \
