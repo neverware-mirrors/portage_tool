@@ -10,6 +10,7 @@ import errno
 import io
 import stat
 import sys
+import tempfile
 import os as _os
 from portage import os
 from portage import _encodings
@@ -66,47 +67,38 @@ class database(fs_template.FsBased):
 			raise cache_errors.CacheCorruption(cpv, e)
 
 	def _setitem(self, cpv, values):
-		s = cpv.rfind("/")
-		fp = os.path.join(self.location,cpv[:s],".update.%i.%s" % (os.getpid(), cpv[s+1:]))
-		try:
-			myf = io.open(_unicode_encode(fp,
-				encoding=_encodings['fs'], errors='strict'),
-				mode='w', encoding=_encodings['repo.content'],
-				errors='backslashreplace')
-		except (IOError, OSError) as e:
-			if errno.ENOENT == e.errno:
+		with tempfile.NamedTemporaryFile(delete=False, dir=self.location,
+			prefix=cpv.replace('/', '_')) as temp:
+			temp.close()
+			try:
+				with io.open(temp.name, mode='w',
+					encoding=_encodings['repo.content'],
+					errors='backslashreplace') as myf:
+					for k in self._write_keys:
+						v = values.get(k)
+						if not v:
+							continue
+						# NOTE: This format string requires unicode_literals, so that
+						# k and v are coerced to unicode, in order to prevent TypeError
+						# when writing raw bytes to TextIOWrapper with Python 2.
+						myf.write("%s=%s\n" % (k, v))
+
+				self._ensure_access(temp.name)
+
+				# Update written, we can move it.
+				new_fp = os.path.join(self.location, cpv)
 				try:
-					self._ensure_dirs(cpv)
-					myf = io.open(_unicode_encode(fp,
-						encoding=_encodings['fs'], errors='strict'),
-						mode='w', encoding=_encodings['repo.content'],
-						errors='backslashreplace')
-				except (OSError, IOError) as e:
-					raise cache_errors.CacheCorruption(cpv, e)
-			else:
+					os.rename(temp.name, new_fp)
+				except OSError as e:
+					if e.errno == errno.ENOENT:
+						self._ensure_dirs(cpv)
+						os.rename(temp.name, new_fp)
+					else:
+						raise cache_errors.CacheCorruption(cpv, e)
+
+			except EnvironmentError as e:
+				os.remove(temp.name)
 				raise cache_errors.CacheCorruption(cpv, e)
-
-		try:
-			for k in self._write_keys:
-				v = values.get(k)
-				if not v:
-					continue
-				# NOTE: This format string requires unicode_literals, so that
-				# k and v are coerced to unicode, in order to prevent TypeError
-				# when writing raw bytes to TextIOWrapper with Python 2.
-				myf.write("%s=%s\n" % (k, v))
-		finally:
-			myf.close()
-		self._ensure_access(fp)
-
-		#update written.  now we move it.
-
-		new_fp = os.path.join(self.location,cpv)
-		try:
-			os.rename(fp, new_fp)
-		except (OSError, IOError) as e:
-			os.remove(fp)
-			raise cache_errors.CacheCorruption(cpv, e)
 
 	def _delitem(self, cpv):
 #		import pdb;pdb.set_trace()
