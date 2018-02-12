@@ -1002,11 +1002,19 @@ class binarytree(object):
 					if instance_key in metadata:
 						continue
 
+					# Clear the build time before inserting the binpkg details.
+					# In CrOS, we want the order of the PORTAGE_BINHOST setting
+					# to dictate preference rather than the build time.
+					# https://crbug.com/809312
+					d = dict(d)
+					d['BUILD_TIME'] = 0
+					cpv = _pkg_str(d['CPV'], metadata=d, settings=self.settings)
+					instance_key = _instance_key(cpv)
+
 					d["CPV"] = cpv
 					d["BASE_URI"] = remote_base_uri
 					d["PKGINDEX_URI"] = url
 					self._remotepkgs[instance_key] = d
-					metadata[instance_key] = d
 					self.dbapi.cpv_inject(cpv)
 
 				self._remote_has_index = True
