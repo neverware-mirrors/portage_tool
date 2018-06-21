@@ -309,6 +309,12 @@ class LocationsManager(object):
 		self.target_root = normalize_path(os.path.abspath(
 			self.target_root)).rstrip(os.path.sep) + os.path.sep
 
+		if self.sysroot != "/" and self.target_root == "/":
+			writemsg(_("!!! Error: SYSROOT (currently %s) must "
+				"be set to / when ROOT is /.\n") % self.sysroot,
+				noiselevel=-1)
+			raise InvalidLocation(self.sysroot)
+
 		ensure_dirs(self.target_root)
 		self._check_var_directory("ROOT", self.target_root)
 
