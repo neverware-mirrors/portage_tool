@@ -2154,6 +2154,9 @@ class config(object):
 					self._accept_chost_re = re.compile("^$")
 
 		pkg_chost = metadata.get('CHOST', '')
+		if pkg_chost in ('armv7a-cros-linux-gnueabi', 'armv7a-cros-linux-gnueabihf'):
+			return (self._accept_chost_re.match('armv7a-cros-linux-gnueabi') is not None or
+				self._accept_chost_re.match('armv7a-cros-linux-gnueabihf') is not None)
 		return not pkg_chost or \
 			self._accept_chost_re.match(pkg_chost) is not None
 
