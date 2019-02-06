@@ -1068,7 +1068,8 @@ class binarytree(object):
 					# https://crbug.com/809312
 					d = dict(d)
 					d['BUILD_TIME'] = 0
-					cpv = _pkg_str(d['CPV'], metadata=d, settings=self.settings)
+					cpv = _pkg_str(d['CPV'], metadata=d, settings=self.settings,
+								   db=self.dbapi)
 
 					d["CPV"] = cpv
 					d["BASE_URI"] = remote_base_uri
