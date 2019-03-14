@@ -1759,13 +1759,27 @@ class config(object):
 				portage_iuse.update(built_use)
 			self.configdict["pkg"]["IUSE_EFFECTIVE"] = \
 				" ".join(sorted(portage_iuse))
+
+			self.configdict["env"]["BASH_FUNC___in_portage_iuse%%"] = (
+				"() { "
+				"if [[ ${#PORTAGE_IUSE_HASH[@]} -lt 1 ]]; then "
+				"  declare -gAr PORTAGE_IUSE_HASH=(%s); "
+				"fi; "
+				"[[ -n ${PORTAGE_IUSE_HASH[$1]} ]]; "
+				"}" ) % " ".join('["%s"]=1' % x for x in portage_iuse)
 		else:
 			portage_iuse = self._get_implicit_iuse()
 			portage_iuse.update(explicit_iuse)
 
-		# PORTAGE_IUSE is not always needed so it's lazily evaluated.
-		self.configdict["env"].addLazySingleton(
-			"PORTAGE_IUSE", _lazy_iuse_regex, portage_iuse)
+			# The _get_implicit_iuse() returns a regular expression
+			# so we can't use the (faster) map.  Fall back to
+			# implementing __in_portage_iuse() the older/slower way.
+
+			# PORTAGE_IUSE is not always needed so it's lazily evaluated.
+			self.configdict["env"].addLazySingleton(
+				"PORTAGE_IUSE", _lazy_iuse_regex, portage_iuse)
+			self.configdict["env"]["BASH_FUNC___in_portage_iuse%%"] = \
+				"() { [[ $1 =~ ${PORTAGE_IUSE} ]]; }"
 
 		ebuild_force_test = not restrict_test and \
 			self.get("EBUILD_FORCE_TEST") == "1"
