@@ -1008,10 +1008,6 @@ class binarytree(object):
 							_("Timed out while closing connection to binhost"),
 							noiselevel=-1)
 			except UseCachedCopyOfRemoteIndex:
-				writemsg_stdout("\n")
-				writemsg_stdout(
-					colorize("GOOD", _("Local copy of remote index is up-to-date and will be used.")) + \
-					"\n")
 				rmt_idx = pkgindex
 			except EnvironmentError as e:
 				# This includes URLError which is raised for SSL
