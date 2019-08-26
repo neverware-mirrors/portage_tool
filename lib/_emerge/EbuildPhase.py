@@ -241,7 +241,9 @@ class EbuildPhase(CompositeTask):
 
 		if self.phase == "install":
 			out = io.StringIO()
-			_check_build_log(self.settings, out=out)
+			ret = _check_build_log(self.settings, out=out)
+			if ret is False:
+				fail = True
 			msg = out.getvalue()
 			self.scheduler.output(msg, log_path=logfile)
 
