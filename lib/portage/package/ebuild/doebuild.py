@@ -1931,6 +1931,8 @@ def _check_build_log(mysettings, out=None):
 	if f_real is not None:
 		f_real.close()
 
+	return not bash_command_not_found
+
 def _post_src_install_write_metadata(settings):
 	"""
 	It's possible that the ebuild has changed the
