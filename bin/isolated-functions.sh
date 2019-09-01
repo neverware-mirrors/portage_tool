@@ -146,7 +146,7 @@ die() {
 		(( n-- ))
 	done
 	(( n == 0 )) && (( n = ${#FUNCNAME[@]} - 1 ))
-	while (( n > 0 )); do
+	while (( n >= 0 )); do
 		sourcefile=${BASH_SOURCE[${n}]} sourcefile=${sourcefile##*/}
 		lineno=${BASH_LINENO[${n}]}
 		((filespacing < ${#sourcefile})) && filespacing=${#sourcefile}
