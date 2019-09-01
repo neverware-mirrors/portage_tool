@@ -364,10 +364,10 @@ class _EbuildFetcherProcess(ForkProcess):
 		# Skip elog messages for prefetch, in order to avoid duplicates.
 		if not self.prefetch and self.returncode != os.EX_OK:
 			msg_lines = []
-			msg = "Fetch failed for '%s'" % (self.pkg.cpv,)
+			msg = "Fetch failed for %s" % (self.pkg.cpv,)
 			if self.logfile is not None:
 				msg += ", Log file:"
 			msg_lines.append(msg)
 			if self.logfile is not None:
-				msg_lines.append(" '%s'" % (self.logfile,))
+				msg_lines.append("  %s" % (self.logfile,))
 			self._eerror(msg_lines)

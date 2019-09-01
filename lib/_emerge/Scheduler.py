@@ -1172,7 +1172,7 @@ class Scheduler(PollScheduler):
 					msg += ", Log file:"
 				printer.eerror(msg)
 				if log_path is not None:
-					printer.eerror("  '%s'" % colorize('INFORM', log_path))
+					printer.eerror("  %s" % colorize('INFORM', log_path))
 			printer.eerror("")
 
 		if self._failed_pkgs_all:
@@ -1782,9 +1782,9 @@ class Scheduler(PollScheduler):
 		self._status_msg(msg)
 
 		if log_path is not None:
-			self._status_msg(" '%s'" % (colorize("INFORM", log_path),))
+			self._status_msg("  %s" % (colorize("INFORM", log_path),), end=None)
 
-	def _status_msg(self, msg):
+	def _status_msg(self, msg, end='\n'):
 		"""
 		Display a brief status message (no newlines) in the status display.
 		This is called by tasks to provide feedback to the user. This
@@ -1795,8 +1795,8 @@ class Scheduler(PollScheduler):
 		@type msg: str
 		@param msg: a brief status message (no newlines allowed)
 		"""
-		if not self._background:
-			writemsg_level("\n")
+		if not self._background and end:
+			writemsg_level(end)
 		self._status_display.displayMessage(msg)
 
 	def _save_resume_list(self):
