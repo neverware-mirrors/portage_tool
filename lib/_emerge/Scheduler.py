@@ -1158,7 +1158,7 @@ class Scheduler(PollScheduler):
 					"failed to build, install, or execute postinst:"
 
 			printer.eerror("")
-			for line in textwrap.wrap(msg, 72):
+			for line in textwrap.wrap(msg, 100):
 				printer.eerror(line)
 			printer.eerror("")
 			for failed_pkg in self._failed_pkgs_all:
@@ -1878,7 +1878,7 @@ class Scheduler(PollScheduler):
 					"to skip the first package in the list and " + \
 					"any other packages that may be " + \
 					"masked or have missing dependencies."
-				for line in textwrap.wrap(msg, 72):
+				for line in textwrap.wrap(msg, 100):
 					out.eerror(line)
 			self._post_mod_echo_msgs.append(unsatisfied_resume_dep_msg)
 			return False
@@ -1892,7 +1892,7 @@ class Scheduler(PollScheduler):
 		mydepgraph.display_problems()
 		self._init_graph(mydepgraph.schedulerGraph())
 
-		msg_width = 75
+		msg_width = 100
 		for task, atoms in dropped_tasks.items():
 			if not (isinstance(task, Package) and task.operation == "merge"):
 				continue
