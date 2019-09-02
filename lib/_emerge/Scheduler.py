@@ -1081,47 +1081,13 @@ class Scheduler(PollScheduler):
 
 		printer = portage.output.EOutput()
 		background = self._background
-		failure_log_shown = False
-		if background and len(self._failed_pkgs_all) == 1 and \
-			self.myopts.get('--quiet-fail', 'n') != 'y':
-			# If only one package failed then just show it's
-			# whole log for easy viewing.
-			failed_pkg = self._failed_pkgs_all[-1]
-			log_file = None
-			log_file_real = None
-
-			log_path = self._locate_failure_log(failed_pkg)
-			if log_path is not None:
-				try:
-					log_file = open(_unicode_encode(log_path,
-						encoding=_encodings['fs'], errors='strict'), mode='rb')
-				except IOError:
-					pass
-				else:
-					if log_path.endswith('.gz'):
-						log_file_real = log_file
-						log_file =  gzip.GzipFile(filename='',
-							mode='rb', fileobj=log_file)
-
-			if log_file is not None:
-				try:
-					for line in log_file:
-						writemsg_level(line, noiselevel=-1)
-				except zlib.error as e:
-					writemsg_level("%s\n" % (e,), level=logging.ERROR,
-						noiselevel=-1)
-				finally:
-					log_file.close()
-					if log_file_real is not None:
-						log_file_real.close()
-				failure_log_shown = True
 
 		# Dump mod_echo output now since it tends to flood the terminal.
 		# This allows us to avoid having more important output, generated
 		# later, from being swept away by the mod_echo output.
 		mod_echo_output =  _flush_elog_mod_echo()
 
-		if background and not failure_log_shown and \
+		if background and \
 			self._failed_pkgs_all and \
 			self._failed_pkgs_die_msgs and \
 			not mod_echo_output:
@@ -1783,6 +1749,35 @@ class Scheduler(PollScheduler):
 
 		if log_path is not None:
 			self._status_msg("  %s" % (colorize("INFORM", log_path),), end=None)
+
+			if self._background and self.myopts.get('--quiet-fail', 'n') != 'y':
+				self._status_msg('=== Start output for job %s ===' % (pkg.pf,), end=None)
+				writemsg_level('\r')
+
+				log_file = None
+				log_file_real = None
+				try:
+					log_file = open(_unicode_encode(log_path,
+						encoding=_encodings['fs'], errors='strict'), mode='rb')
+				except IOError:
+					pass
+				else:
+					if log_path.endswith('.gz'):
+						log_file_real = log_file
+						log_file =  gzip.GzipFile(filename='',
+							mode='rb', fileobj=log_file)
+
+				if log_file is not None:
+					try:
+						for line in log_file:
+							writemsg_level(b'%s: %s' % (pkg.pf.encode(), line), noiselevel=-1)
+					except zlib.error as e:
+						writemsg_level("%s\n" % (e,), level=logging.ERROR,
+							noiselevel=-1)
+					finally:
+						log_file.close()
+						if log_file_real is not None:
+							log_file_real.close()
 
 	def _status_msg(self, msg, end='\n'):
 		"""
