@@ -215,9 +215,9 @@ save_elf_debug() {
 		if [[ -n ${splitdebug} ]] ; then
 			mv "${splitdebug}" "${y}"
 		else
-			local objcopy_flags="--only-keep-debug"
-			${FEATURES_compressdebug} && objcopy_flags+=" --compress-debug-sections"
-			${OBJCOPY} ${objcopy_flags} "${x}" "${y}"
+			# Copy full binary as the split-debug binary.
+			# This is to avoid symbolization issues with Perf/CWP (b/127337806).
+			cp "${x}" "${y}"
 			${OBJCOPY} --add-gnu-debuglink="${y}" "${x}"
 		fi
 		# Only do the following if the debug file was
