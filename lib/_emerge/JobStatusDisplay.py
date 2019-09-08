@@ -3,6 +3,7 @@
 
 from __future__ import unicode_literals
 
+import datetime
 import io
 import sys
 import time
@@ -131,7 +132,7 @@ class JobStatusDisplay(object):
 		return True
 
 	def _format_msg(self, msg):
-		return ">>> %s" % msg
+		return ">>> %s %s" % (datetime.datetime.now().strftime('%H:%M:%S'), msg)
 
 	def _erase(self):
 		self._write(
