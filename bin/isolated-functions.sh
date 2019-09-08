@@ -248,7 +248,7 @@ __quiet_mode() {
 }
 
 __vecho() {
-	__quiet_mode || echo "$@" >&2
+	__quiet_mode || echo "$(date +%H:%M:%S)" "$@" >&2
 }
 
 # Internal logging function, don't use this in ebuilds
