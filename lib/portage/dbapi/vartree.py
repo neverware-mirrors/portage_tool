@@ -4301,6 +4301,19 @@ class dblink(object):
 			eerror(wrap(msg, 70))
 
 			if abort:
+				eerror([
+					'',
+					'When moving files between packages, you need to use blockers so portage can',
+					'cleanly & automatically migrate files between them. Missing blockers will',
+					"break developers & builders, so manually running `emerge -C` won't work.",
+					'',
+					"If you see this for packages you aren't working on, please file a new bug",
+					'at https://crbug.com/new so we can get the blockers added.',
+					'',
+					'Please see the documentation for more details:',
+					'  https://chromium.googlesource.com/chromiumos/docs/+/master'
+					'/portage/ebuild_faq.md#How-do-I-handle-file-collisions',
+				])
 				return 1
 
 		# The merge process may move files out of the image directory,
