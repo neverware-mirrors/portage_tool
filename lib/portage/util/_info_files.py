@@ -28,6 +28,8 @@ def chk_updated_info_files(root, infodirs, prev_mtimes):
 							regen_infodirs.append(inforoot)
 
 		if not regen_infodirs:
+			# CrOS: We don't care about this noise.
+			return
 			portage.util.writemsg_stdout("\n")
 			if portage.util.noiselimit >= 0:
 				out.einfo("GNU info directory index is up-to-date.")
