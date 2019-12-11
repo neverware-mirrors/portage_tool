@@ -43,6 +43,7 @@ def _finalize():
 	printer = EOutput()
 	for root, key, logentries, logfile in _items:
 		print()
+		sys.stdout.flush()
 		if root == "/":
 			printer.einfo(_("Messages for package %s:") %
 				colorize("INFORM", key))
@@ -52,6 +53,7 @@ def _finalize():
 		if logfile is not None:
 			printer.einfo(_("Log file: %s") % colorize("INFORM", logfile))
 		print()
+		sys.stdout.flush()
 		for phase in EBUILD_PHASES:
 			if phase not in logentries:
 				continue
