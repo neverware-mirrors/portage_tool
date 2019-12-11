@@ -543,7 +543,6 @@ def action_build(emerge_config, trees=DeprecationWarning,
 			if retval == os.EX_OK and \
 				not (buildpkgonly or fetchonly or pretend):
 				if "yes" == settings.get("AUTOCLEAN"):
-					portage.writemsg_stdout(">>> Auto-cleaning packages...\n")
 					unmerge(trees[settings['EROOT']]['root_config'],
 						myopts, "clean", [],
 						ldpath_mtimes, autoclean=1)
