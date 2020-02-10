@@ -4324,6 +4324,10 @@ class depgraph(object):
 
 		for arg in self._expand_set_args(args, add_to_digraph=True):
 			for atom in arg.pset.getAtoms():
+				if isinstance(arg, SetArg):
+					myroot = arg.root_config.root
+				else:
+					myroot = self._frozen_config.target_root
 				self._spinner_update()
 				dep = Dependency(atom=atom, onlydeps=onlydeps,
 					root=myroot, parent=arg)
