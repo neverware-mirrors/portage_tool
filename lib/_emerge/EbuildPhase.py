@@ -239,7 +239,7 @@ class EbuildPhase(CompositeTask):
 
 		logfile = self._get_log_path()
 
-		if self.phase == "install":
+		if self.phase in {'install', 'preinst'}:
 			out = io.StringIO()
 			ret = _check_build_log(self.settings, out=out)
 			if ret is False:
