@@ -672,9 +672,8 @@ econf() {
 		if ! "${ECONF_SOURCE}/configure" "$@" ; then
 
 			if [ -s config.log ]; then
-				echo
-				echo "!!! Please attach the following file when seeking support:"
-				echo "!!! ${PWD}/config.log"
+				echo "### ${PWD}/config.log:"
+				cat config.log
 			fi
 			# econf dies unconditionally in EAPIs 0 to 3
 			___eapi_helpers_can_die || die "econf failed"
