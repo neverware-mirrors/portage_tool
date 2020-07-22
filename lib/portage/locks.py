@@ -176,14 +176,30 @@ def _lockfile_iteration(mypath, wantnewlockfile=False, unlinkfile=False,
 		preexisting = os.path.exists(lockfilename)
 		old_mask = os.umask(000)
 		try:
+			def check_lock(path):
+				ret = []
+				while path != '/':
+					try:
+						st = os.stat(path)
+						ret.append('%s: mode:%o uid:%i gid:%i' % (
+							path, st.st_mode, st.st_uid, st.st_gid))
+					except OSError as e:
+						ret.append('%s: %s' % (path, e))
+					path = os.path.dirname(path)
+				return '\n'.join(ret)
+
 			while True:
 				try:
+					before_status = check_lock(lockfilename)
 					myfd = os.open(lockfilename, os.O_CREAT|os.O_RDWR, 0o660)
 				except OSError as e:
+					after_status = check_lock(lockfilename)
 					if e.errno in (errno.ENOENT, errno.ESTALE) and os.path.isdir(os.path.dirname(lockfilename)):
 						# Retry required for NFS (see bug 636798).
 						continue
 					else:
+						writemsg("Portage lock state:\nBefore:\n%s\nAfter:\n%s\n" % (
+							before_status, after_status))
 						_raise_exc(e)
 				else:
 					break
