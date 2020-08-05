@@ -4,10 +4,12 @@
 from __future__ import division, print_function, unicode_literals
 
 from collections import deque
+import datetime
 import gc
 import gzip
 import logging
 import signal
+import subprocess
 import sys
 import textwrap
 import time
@@ -241,6 +243,7 @@ class Scheduler(PollScheduler):
 		self._completed_tasks = set()
 		self._main_exit = None
 		self._main_loadavg_handle = None
+		self._slow_job_check_handle = None
 
 		self._failed_pkgs = []
 		self._failed_pkgs_all = []
@@ -1343,6 +1346,9 @@ class Scheduler(PollScheduler):
 	def _main_loop(self):
 		self._main_exit = self._event_loop.create_future()
 
+		# Poll for slow jobs.
+		self._slow_job_check_schedule()
+
 		if self._max_load is not None and \
 			self._loadavg_latency is not None and \
 			(self._max_jobs is True or self._max_jobs > 1):
@@ -1405,6 +1411,9 @@ class Scheduler(PollScheduler):
 		if self._job_delay_timeout_id is not None:
 			self._job_delay_timeout_id.cancel()
 			self._job_delay_timeout_id = None
+		if self._slow_job_check_handle is not None:
+			self._slow_job_check_handle.cancel()
+			self._slow_job_check_handle = None
 
 	def _choose_pkg(self):
 		"""
@@ -1632,6 +1641,59 @@ class Scheduler(PollScheduler):
 
 		return False
 
+	def _slow_job_check_schedule(self):
+		"""(Re)Schedule a slow job check."""
+		if self._slow_job_check_handle is not None:
+			self._slow_job_check_handle.cancel()
+			self._slow_job_check_handle = None
+		# Poll every 5 minutes.  That should balance catching slow jobs while
+		# not adding too much overhead otherwise.
+		self._slow_job_check_handle = self._event_loop.call_later(
+			5 * 60, self._slow_job_check)
+
+	def _slow_job_check(self):
+		"""Check for jobs taking a "long" time and print their status."""
+		# We post updates every 30min, so only recheck packages that often.
+		ping_interval = datetime.timedelta(minutes=30)
+		delta_30min = datetime.timedelta(minutes=30)
+		delta_2hr = datetime.timedelta(hours=2)
+		now = datetime.datetime.utcnow()
+		for task in self._running_tasks.values():
+			if not isinstance(task, MergeListItem):
+				# Ignore merged tasks as they should be fast.
+				continue
+
+			# Ignore tasks we've already warned about.
+			if task.next_ping > now:
+				continue
+			# Ignore tasks that hasn't run long enough.
+			duration = now - task.start_time
+			if duration < delta_30min:
+				continue
+
+			task.next_ping = now + ping_interval
+			msg = 'Still building %s after %s' % (task.pkg, duration)
+
+			# If the job has been pending for a long time, include the current process tree.
+			if duration > delta_2hr:
+				# Portage likes to nest tasks with tasks, so we have to walk down an
+				# arbitrary depth to find the first node that has spawned a process.
+				subtask = task._current_task
+				while getattr(subtask, '_current_task', None) is not None:
+					if hasattr(subtask, 'pid'):
+						break
+					subtask = subtask._current_task
+				if hasattr(subtask, 'pid'):
+					pstree = subprocess.run(
+						['pstree', '-Apals', str(subtask.pid)],
+						stdout=subprocess.PIPE, encoding='utf-8', errors='replace')
+					msg += pstree.stdout
+
+			task.statusMessage(msg)
+
+		self._slow_job_check_handle = None
+		self._slow_job_check_schedule()
+
 	def _schedule_tasks_imp(self):
 		"""
 		@rtype: bool
@@ -1731,7 +1793,9 @@ class Scheduler(PollScheduler):
 			scheduler=self._sched_iface,
 			settings=self._allocate_config(pkg.root),
 			statusMessage=self._status_msg,
-			world_atom=self._world_atom)
+			world_atom=self._world_atom,
+			start_time=datetime.datetime.utcnow(),
+			next_ping=datetime.datetime.utcnow())
 
 		return task
 

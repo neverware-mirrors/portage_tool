@@ -23,7 +23,8 @@ class MergeListItem(CompositeTask):
 		"find_blockers", "logger", "mtimedb", "pkg",
 		"pkg_count", "pkg_to_replace", "prefetcher",
 		"settings", "statusMessage", "world_atom") + \
-		("_install_task",)
+		("_install_task",) + \
+		("start_time", "next_ping")
 
 	def _start(self):
 
