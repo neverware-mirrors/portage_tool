@@ -24,7 +24,7 @@ class MergeListItem(CompositeTask):
 		"pkg_count", "pkg_to_replace", "prefetcher",
 		"settings", "statusMessage", "world_atom") + \
 		("_install_task",) + \
-		("start_time", "next_ping")
+		("start_time", "next_ping", "last_log_hash")
 
 	def _start(self):
 

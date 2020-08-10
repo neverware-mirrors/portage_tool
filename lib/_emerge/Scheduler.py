@@ -1687,7 +1687,44 @@ class Scheduler(PollScheduler):
 					pstree = subprocess.run(
 						['pstree', '-Apals', str(subtask.pid)],
 						stdout=subprocess.PIPE, encoding='utf-8', errors='replace')
-					msg += pstree.stdout
+					msg += '\n' + pstree.stdout.strip()
+
+				if self._background and self.myopts.get('--quiet-fail', 'n') != 'y':
+					log_path = task.settings.get('PORTAGE_LOG_FILE')
+					if log_path:
+						msg += '\n>>> %s: Dumping log file %s:' % (task.pkg.cpv, log_path)
+
+						with open(log_path, 'r', encoding='utf-8') as fp:
+							data = fp.read()
+
+						# Only dump the last 5MiB of logs.  This should fit the vast
+						# majority of packages, and avoid dumping the entire log for
+						# the few that are extremely large (e.g. Chrome).
+						LOG_LIMIT = 5 * 1024 * 1024
+
+						# If the log hasn't changed, don't keep dumping the same output.
+						# For builds that hang for a long time, redumping the log can
+						# quickly add up to more than browsers can handle.
+						new_hash = portage.checksum.checksum_str(data.encode('utf-8'))
+						if new_hash != task.last_log_hash:
+							task.last_log_hash = new_hash
+
+							if len(data) > LOG_LIMIT:
+								msg += '\n>>> NB: File is %i bytes; showing last ~%i MiB' % (
+									len(data), LOG_LIMIT / 1024 / 1024)
+								data = data[-LOG_LIMIT:]
+								# Scan to the first newline to avoid confusing display.
+								try:
+									pos = data.index('\n')
+									data = data[pos + 1:]
+								except ValueError:
+									pass
+						else:
+							data = '<NO NEW LOG OUTPUT SINCE LAST DUMP>'
+
+						msg += '\n' + data.strip()
+
+				msg += '\n>>> %s: End of debugging info' % (task.pkg.cpv,)
 
 			task.statusMessage(msg)
 
